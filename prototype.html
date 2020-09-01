@@ -1,0 +1,126 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
+.hi-lite{
+	display: inline-block;
+    padding: 0px 24px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+</style>
+</head>
+<body>
+
+<a href="#" class="hi-lite" id="test">Test</a>
+
+<script>
+//notes: https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer
+/**
+ *	Assign event handlers on page load
+ */
+$(document).ready(function() {
+	$("#test").click(nj_test);
+});
+
+function nj_test() {
+	//sequences = ['AAAAA','AAAAB','AABBB','BBBBB','ABAAB'];
+	sequences = ['AAAAAAAAAA','AAAAABBBBB','CCCCCCCCCA','DDDDDDDDCA','AECDDDDDCA'];
+	neighborJoining(sequences);
+}
+
+function neighborJoining(sequences) {
+	//Get starting distance matrix
+	let distMat = calculateDistMatrix(sequences);
+	let taxaCount	= distMat.length;
+	
+	for (let h = 0; h < taxaCount - 2; h++) {
+		//Calculate rowsums
+		let rowSums = distMat.map(w => w.reduce((x,y) => x + y, 0));
+	
+		//Calculate the Q matrix fill upper quadrant. Focus on upper triangle, and greedily select first
+		let n  = distMat.length;
+		let mIndex = [0,1];
+		let qMat = Array(n).fill().map(() => Array(n).fill(0));
+		for (let i = 0; i < n; i++) {
+			for (let j = i + 1; j < n; j++) {
+				qMat[i][j] = (n-2)*distMat[i][j]-rowSums[i]-rowSums[j];
+				
+				//Select minimum index
+				if (qMat[i][j] < qMat[mIndex[0]][mIndex[1]]) {
+					mIndex[0] = i;
+					mIndex[1] = j;
+				}
+			}
+		}
+		
+		//Calculate branch lengths
+		lengthA = 0.5 * distMat[mIndex[0]][mIndex[1]] + (1 / (2 * (n - 2))) * (rowSums[mIndex[0]] - rowSums[mIndex[1]]);
+		lengthB = distMat[mIndex[0]][mIndex[1]] - lengthA;
+		
+		//Recalc branch lengths, copy down (cannot merge the two loops without storing another copy of the array
+		for (let i = 0; i < n; i++) {
+			distMat[mIndex[0]][i] = 0.5 * (distMat[i][mIndex[0]] + distMat[i][mIndex[1]] - distMat[mIndex[1]][mIndex[0]]);	//Update top half of triangle, maintain bottom for calc
+		}
+		for (let i = 0; i < n; i++) {
+			distMat[i][mIndex[0]] = distMat[mIndex[0]][i];
+		}
+		
+		//Drop out taxa 2 and zero out lengths on taxa 1
+		distMat.splice(mIndex[1],1);
+		distMat.map(function(arr) {
+			return arr.splice(mIndex[1],1);
+		});
+
+		//Diagnostics
+		console.log(lengthA);
+		console.log(lengthB);
+		
+		print_r(distMat);
+	}
+}
+
+function print_r(arr) {
+	for (let i = 0; i < arr.length; i++) {
+		console.log(arr[i].toString());
+	}
+}
+
+function calculateDistMatrix(sequences) {
+	//Initialize matrix
+	let n  = sequences.length;
+	let distMat = Array(n).fill().map(() => Array(n).fill(0));
+	
+	//Iterate over half, fill symmetrically
+	for (let i = 0; i < n; i++) {
+		for (let j = i+1; j < n; j++) {
+			distMat[i][j] = hammingDistance(sequences[i], sequences[j]);
+			distMat[j][i] = distMat[i][j];
+		}
+	}
+
+	
+	return distMat;
+}
+
+//https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/string/hamming-distance/hammingDistance.js
+function hammingDistance(a, b) {
+	if (a.length !== b.length) {
+		throw new Error('Strings must be of the same length');
+	}
+	
+	let distance = 0;
+	
+	for (let i = 0; i < a.length; i += 1) {
+		if (a[i] !== b[i]) {
+			distance += 1;
+		}
+	}
+	
+	return distance;
+}
+
+</script>
+</body>
+</html>
