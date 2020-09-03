@@ -27,13 +27,14 @@ $(document).ready(function() {
 function nj_test() {
 	//sequences = ['AAAAA','AAAAB','AABBB','BBBBB','ABAAB'];
 	sequences = ['AAAAAAAAAA','AAAAABBBBB','CCCCCCCCCA','DDDDDDDDCA','AECDDDDDCA'];
-	neighborJoining(sequences);
+	neighborJoining(sequences, ['A','B','C','D','E']);
 }
 
-function neighborJoining(sequences) {
+function neighborJoining(sequences, taxa) {
 	//Get starting distance matrix
 	let distMat = calculateDistMatrix(sequences);
 	let taxaCount	= distMat.length;
+	let treeObject = {};
 	
 	for (let h = 0; h < taxaCount - 2; h++) {
 		//Calculate rowsums
@@ -67,18 +68,53 @@ function neighborJoining(sequences) {
 			distMat[i][mIndex[0]] = distMat[mIndex[0]][i];
 		}
 		
+		//Diagnostics
+		console.log(taxa[mIndex[0]],lengthA);
+		console.log(taxa[mIndex[1]],lengthB);
+		
+		//Add information to tree object
+		/*
+		1. taxa + taxa, same level
+		2. taxa+internal, nest
+		3. internal, internal ,idk
+		*/
+		let obj = {};
+		if(taxa[mIndex[0]][0] == "`") {
+			obj[taxa[mIndex[0]]] = {length: lengthA, children: treeObject};
+			obj[taxa[mIndex[1]]] = {length: lengthB};
+			treeObject = obj;
+		}
+		else if (taxa[mIndex[1]][0] == "`") {
+			obj[taxa[mIndex[0]]] = {length: lengthA};
+			obj[taxa[mIndex[1]]] = {length: lengthB, children: treeObject};
+			treeObject = obj;
+		}
+		else {
+			obj[taxa[mIndex[0]]] = {length: lengthA};
+			obj[taxa[mIndex[1]]] = {length: lengthB};
+			treeObject = {
+				...obj,
+				...treeObject,
+			}
+		}
+		//console.log(obj);
+		
+		//print_r(distMat);
+		
 		//Drop out taxa 2 and zero out lengths on taxa 1
 		distMat.splice(mIndex[1],1);
 		distMat.map(function(arr) {
 			return arr.splice(mIndex[1],1);
 		});
-
-		//Diagnostics
-		console.log(lengthA);
-		console.log(lengthB);
-		
-		print_r(distMat);
+		taxa.splice(mIndex[1],1);
+		taxa[mIndex[0]] = "`"  + h;
 	}
+	
+	//Grab last taxa
+	console.log(taxa[1],distMat[0][1]);
+	
+	console.log(treeObject);
+	console.log(JSON.stringify(treeObject));
 }
 
 function print_r(arr) {
