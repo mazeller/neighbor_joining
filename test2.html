@@ -79,25 +79,13 @@ function neighborJoining(sequences, taxa) {
 		3. internal, internal ,idk
 		*/
 		let obj = {};
-		if(taxa[mIndex[0]][0] == "`") {
-			obj[taxa[mIndex[0]]] = {children: treeObject, length: lengthA};
-			obj[taxa[mIndex[1]]] = {length: lengthB};
-			treeObject = obj;
-		}
-		else if (taxa[mIndex[1]][0] == "`") {
-			obj[taxa[mIndex[0]]] = {length: lengthA};
-			obj[taxa[mIndex[1]]] = {children: treeObject, length: lengthB};
-			treeObject = obj;
-		}
-		else {
-			obj[taxa[mIndex[0]]] = {length: lengthA};
-			obj[taxa[mIndex[1]]] = {length: lengthB};
-			treeObject = {
-				...obj,
-				...treeObject,
-			}
-		}
-		//console.log(obj);
+		obj["`" + h] = {};
+		obj["`" + h][taxa[mIndex[0]]] = {length: lengthA};
+		obj["`" + h][taxa[mIndex[1]]] = {length: lengthB};
+		treeObject = {
+			...obj,
+			...treeObject,
+		};		
 		
 		//print_r(distMat);
 		
@@ -112,6 +100,8 @@ function neighborJoining(sequences, taxa) {
 	
 	//Grab last taxa
 	console.log(taxa[1],distMat[0][1]);
+	//testString = "(" + taxa[0] + ":" + distMat[0][0] + "," + taxa[1] + ":" + distMat[0][1] + ")";
+	//treeObject.push(testString);		
 	
 	console.log(treeObject);
 	console.log(JSON.stringify(treeObject));

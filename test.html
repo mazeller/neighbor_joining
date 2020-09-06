@@ -34,7 +34,7 @@ function neighborJoining(sequences, taxa) {
 	//Get starting distance matrix
 	let distMat = calculateDistMatrix(sequences);
 	let taxaCount	= distMat.length;
-	let treeObject = {};
+	let treeObject = [];
 	
 	for (let h = 0; h < taxaCount - 2; h++) {
 		//Calculate rowsums
@@ -73,31 +73,9 @@ function neighborJoining(sequences, taxa) {
 		console.log(taxa[mIndex[1]],lengthB);
 		
 		//Add information to tree object
-		/*
-		1. taxa + taxa, same level
-		2. taxa+internal, nest
-		3. internal, internal ,idk
-		*/
 		let obj = {};
-		if(taxa[mIndex[0]][0] == "`") {
-			obj[taxa[mIndex[0]]] = {children: treeObject, length: lengthA};
-			obj[taxa[mIndex[1]]] = {length: lengthB};
-			treeObject = obj;
-		}
-		else if (taxa[mIndex[1]][0] == "`") {
-			obj[taxa[mIndex[0]]] = {length: lengthA};
-			obj[taxa[mIndex[1]]] = {children: treeObject, length: lengthB};
-			treeObject = obj;
-		}
-		else {
-			obj[taxa[mIndex[0]]] = {length: lengthA};
-			obj[taxa[mIndex[1]]] = {length: lengthB};
-			treeObject = {
-				...obj,
-				...treeObject,
-			}
-		}
-		//console.log(obj);
+		testString = "`" + h + "(" + taxa[mIndex[0]] + ":" + lengthA + "," + taxa[mIndex[1]] + ":" + lengthB + ")";
+		treeObject.push(testString);		
 		
 		//print_r(distMat);
 		
@@ -112,15 +90,37 @@ function neighborJoining(sequences, taxa) {
 	
 	//Grab last taxa
 	console.log(taxa[1],distMat[0][1]);
+	testString = "(" + taxa[0] + ":" + distMat[0][0] + "," + taxa[1] + ":" + distMat[0][1] + ")";
+	treeObject.push(testString);		
 	
 	console.log(treeObject);
 	console.log(JSON.stringify(treeObject));
+	console.log(resolveTree(treeObject));
 }
 
 function print_r(arr) {
 	for (let i = 0; i < arr.length; i++) {
 		console.log(arr[i].toString());
 	}
+}
+
+function resolveTree(stringArray) {
+	for ( let i = 0; i < stringArray.length; i++) {
+		//If marked, copy over the significant part and past it into another string
+		if	(stringArray[i][0] == "`") {
+			let startIndex = stringArray[i].indexOf("(");
+			internalNode = stringArray[i].substring(0,startIndex );
+			branchInfo = stringArray[i].substring(startIndex);
+
+			//Clear out indexing
+			stringArray[i] = "";
+			stringArray = stringArray.map(item => item.replace(internalNode, branchInfo));
+		}
+	}
+	
+	//Take out indexes, return solo
+	stringArray = stringArray.filter(item => item);
+	return stringArray[0] + ";";
 }
 
 function calculateDistMatrix(sequences) {

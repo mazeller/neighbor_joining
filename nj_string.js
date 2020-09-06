@@ -1,40 +1,8 @@
-<html>
-<head>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<style>
-.hi-lite{
-	display: inline-block;
-    padding: 0px 24px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-</style>
-</head>
-<body>
-
-<a href="#" class="hi-lite" id="test">Test</a>
-
-<script>
-//notes: https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer
-/**
- *	Assign event handlers on page load
- */
-$(document).ready(function() {
-	$("#test").click(nj_test);
-});
-
-function nj_test() {
-	//sequences = ['AAAAA','AAAAB','AABBB','BBBBB','ABAAB'];
-	sequences = ['AAAAAAAAAA','AAAAABBBBB','CCCCCCCCCA','DDDDDDDDCA','AECDDDDDCA'];
-	neighborJoining(sequences, ['A','B','C','D','E']);
-}
-
 function neighborJoining(sequences, taxa) {
 	//Get starting distance matrix
 	let distMat = calculateDistMatrix(sequences);
 	let taxaCount	= distMat.length;
-	let treeObject = {};
+	let treeObject = [];
 	
 	for (let h = 0; h < taxaCount - 2; h++) {
 		//Calculate rowsums
@@ -73,31 +41,9 @@ function neighborJoining(sequences, taxa) {
 		console.log(taxa[mIndex[1]],lengthB);
 		
 		//Add information to tree object
-		/*
-		1. taxa + taxa, same level
-		2. taxa+internal, nest
-		3. internal, internal ,idk
-		*/
 		let obj = {};
-		if(taxa[mIndex[0]][0] == "`") {
-			obj[taxa[mIndex[0]]] = {children: treeObject, length: lengthA};
-			obj[taxa[mIndex[1]]] = {length: lengthB};
-			treeObject = obj;
-		}
-		else if (taxa[mIndex[1]][0] == "`") {
-			obj[taxa[mIndex[0]]] = {length: lengthA};
-			obj[taxa[mIndex[1]]] = {children: treeObject, length: lengthB};
-			treeObject = obj;
-		}
-		else {
-			obj[taxa[mIndex[0]]] = {length: lengthA};
-			obj[taxa[mIndex[1]]] = {length: lengthB};
-			treeObject = {
-				...obj,
-				...treeObject,
-			}
-		}
-		//console.log(obj);
+		testString = "`" + h + "(" + taxa[mIndex[0]] + ":" + lengthA + "," + taxa[mIndex[1]] + ":" + lengthB + ")";
+		treeObject.push(testString);		
 		
 		//print_r(distMat);
 		
@@ -112,15 +58,35 @@ function neighborJoining(sequences, taxa) {
 	
 	//Grab last taxa
 	console.log(taxa[1],distMat[0][1]);
-	
-	console.log(treeObject);
-	console.log(JSON.stringify(treeObject));
+	testString = "(" + taxa[0] + ":" + distMat[0][0] + "," + taxa[1] + ":" + distMat[0][1] + ")";
+	treeObject.push(testString);		
+
+	return resolveTree(treeObject);
 }
 
 function print_r(arr) {
 	for (let i = 0; i < arr.length; i++) {
 		console.log(arr[i].toString());
 	}
+}
+
+function resolveTree(stringArray) {
+	for ( let i = 0; i < stringArray.length; i++) {
+		//If marked, copy over the significant part and past it into another string
+		if	(stringArray[i][0] == "`") {
+			let startIndex = stringArray[i].indexOf("(");
+			internalNode = stringArray[i].substring(0,startIndex );
+			branchInfo = stringArray[i].substring(startIndex);
+
+			//Clear out indexing
+			stringArray[i] = "";
+			stringArray = stringArray.map(item => item.replace(internalNode, branchInfo));
+		}
+	}
+	
+	//Take out indexes, return solo
+	stringArray = stringArray.filter(item => item);
+	return stringArray[0] + ";";
 }
 
 function calculateDistMatrix(sequences) {
@@ -156,7 +122,3 @@ function hammingDistance(a, b) {
 	
 	return distance;
 }
-
-</script>
-</body>
-</html>
